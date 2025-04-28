@@ -11,13 +11,13 @@ VALUES
   (1, 'John', 'Doe', 'johndoe@email.com', '555-1234', 1),
   (2, 'Jane', 'Smith', 'janesmith@email.com', '555-2345', 2),
   (3, 'Alice', 'Johnson', 'alicej@email.com', '555-3456', 3),
-  (4, 'Bob', 'Brown', 'bobbrown@email.com', '555-4567', 1),
+  (4, 'Bob', 'Brown', 'bobbrown@email.com', '555-4567', 3),
   (5, 'Charlie', 'Davis', 'charliedavis@email.com', '555-5678', 2),
   (6, 'Eve', 'Wilson', 'evewilson@email.com', '555-6789', 3),
   (7, 'Frank', 'Moore', 'frankmoore@email.com', '555-7890', 1),
-  (8, 'Grace', 'Taylor', 'gracetaylor@email.com', '555-8901', 2),
+  (8, 'Grace', 'Taylor', 'gracetaylor@email.com', '555-8901', 3),
   (9, 'Hank', 'Anderson', 'hankanderson@email.com', '555-9012', 3),
-  (10, 'Ivy', 'Thomas', 'ivythomas@email.com', '555-0123', 1);
+  (10, 'Ivy', 'Thomas', 'ivythomas@email.com', '555-0123', 3);
 
 -- Insert sample menu items
 INSERT INTO MenuItems (ItemID, ItemName, Category, Price, Description)

@@ -1,11 +1,15 @@
+-- Using the Restaurant_Management_System DataBase
+use Restaurant_Management_System;
+
+
 create table Roles (
-	RoleID int not null,
+	RoleID int  IDENTITY(1,1) not null,
 	RoleName varchar(50) not null,
 	primary key (RoleID)
 );
 
 create table Users (
-	UserID int not null,
+	UserID int  IDENTITY(1,1) not null,
 	FirstName varchar(50) not null,
 	LastName varchar(50) not null,
 	Email varchar(50) unique not null,
@@ -17,7 +21,7 @@ create table Users (
 
 
 create table MenuItems (
-	ItemID int not null,
+	ItemID int  IDENTITY(1,1) not null,
 	ItemName varchar(50) not null,
 	Category varchar(50) not null,
 	Price decimal(10,2) not null,
@@ -26,7 +30,7 @@ create table MenuItems (
 );
 
 create table Tables (
-	TableID int not null,
+	TableID int  IDENTITY(1,1) not null,
 	TableNumber varchar(50) not null,
 	Status varchar(50)not null,
 	Capacity int not null,
@@ -34,7 +38,7 @@ create table Tables (
 );
 
 create table Orders (
-	OrderID int not null,
+	OrderID int  IDENTITY(1,1) not null,
 	UserID int not null,
 	TableID int not null,
 	OrderDate DATETIME not null,
@@ -44,7 +48,7 @@ create table Orders (
 );
 
 create table OrderDetails (
-	DetailID int not null,
+	DetailID int  IDENTITY(1,1) not null,
 	OrderID int not null,
 	ItemID int not null,
 	Quantity int not null,
@@ -55,7 +59,7 @@ create table OrderDetails (
 
 
 create table Customer (
-	CustomerID int not null,
+	CustomerID int  IDENTITY(1,1) not null,
 	FirstName varchar(50) not null,
 	LastName varchar(50) not null,
 	Email varchar(50) unique not null,
@@ -64,7 +68,7 @@ create table Customer (
 );
 
 create table Reservations (
-	ReservationID int not null,
+	ReservationID int  IDENTITY(1,1) not null,
 	TableID int not null,
 	CustomerID int not null,
 	ReservationTime DATETIME not null,
@@ -75,7 +79,7 @@ create table Reservations (
 
 
 create table Bills (
-	BillID int not null,
+	BillID int  IDENTITY(1,1) not null,
 	OrderID int not null,
 	Total decimal(10,2) not null,
 	BillDate DATETIME not null,
@@ -87,7 +91,7 @@ create table Bills (
 );
 
 create table Staff (
-	StaffID int not null,
+	StaffID int  IDENTITY(1,1) not null,
 	UserID int not null,
 	RoleID int,
 	Position varchar(20) not null,
