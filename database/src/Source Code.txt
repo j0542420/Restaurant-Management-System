@@ -1,0 +1,1177 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data.SqlClient;
+
+namespace MSQLServer1
+{
+
+
+    class Program
+    {
+        static void Main()
+        {
+            // Prompt user for full name
+            Console.Write("Enter your full name (e.g., John Doe): ");
+            // Read the full name from the console
+            string fullName = Console.ReadLine();
+
+            // Connection string to connect to the SQL Server database
+            string connectionString = "Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;";
+
+            // Create a new SqlConnection object using the connection string
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                // Open the connection to the database
+                conn.Open();
+                // SQL query to select the RoleID based on the full name
+                string query = "SELECT RoleID FROM Users WHERE FirstName + ' ' + LastName = @fullName";
+
+                // Create a new SqlCommand object with the query and connection
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add the full name parameter to the command
+                    cmd.Parameters.AddWithValue("@fullName", fullName);
+                    object result = cmd.ExecuteScalar();
+
+                    // Check if the result is not null
+                    if (result != null)
+                    {
+                        // Convert the result to an integer (RoleID)
+                        int roleId = Convert.ToInt32(result);
+                        // Welcome the user
+                        Console.WriteLine($"\nWelcome, {fullName}!");
+
+                        // Display the role based on RoleID
+                        switch (roleId)
+                        {
+                            // Role 1: Admin
+                            case 1:
+                                // Display admin role message
+                                Console.WriteLine("Role: Admin - You can manage users and menus.");
+                                // Call the ShowAdminMenu method to display admin options
+                                ShowAdminMenu(conn);
+                                break;
+                            // Role 2: Manager
+                            case 2:
+                                // Display manager role message
+                                Console.WriteLine("Role: Manager - You can assign staff and manage orders.");
+                                // Call the ShowManagerMenu method to display manager options
+                                ShowManagerMenu(conn);
+                                break;
+                            // Role 3: Staff
+                            case 3:
+                                // Display staff role message
+                                Console.WriteLine("Role: Staff - You can take orders and generate bills.");
+                                // Call the ShowStaffMenu method to display staff options
+                                ShowStaffMenu(conn);
+                                break;
+                            // Role 4: Unknown Role
+                            default:
+                                // Display unknown role message
+                                Console.WriteLine("Unknown role.");
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // Display user not found message
+                        Console.WriteLine("\nUser not found. Please check your name.");
+                    }
+                }
+            }
+            // Wait for user input before closing the console
+            Console.WriteLine("\nPress any key to exit...");
+            // Wait for a key press
+            Console.ReadKey();
+        }
+        // ??????????? Admin Methods ???????????
+        static void ShowAdminMenu(SqlConnection conn)
+        {
+            // Loop to display the admin menu until the user chooses to exit
+            while (true)
+            {
+                // Display the admin menu options
+                Console.WriteLine("\n--- Admin Menu ---");
+                Console.WriteLine("1. Manage Users");
+                Console.WriteLine("2. Manage Menu Items");
+                Console.WriteLine("3. View Reports");
+                Console.WriteLine("4. Exit");
+                // Prompt the user to select an option
+                Console.Write("Select an option: ");
+                // Read the user's choice from the console
+                var choice = Console.ReadLine();
+                // Check the user's choice and call the corresponding method
+                switch (choice)
+                {
+                    // Option 1: Manage Users
+                    case "1":
+                        // Call the ManageUsers method to manage users
+                        ManageUsers(conn);
+                        break;
+                    // Option 2: Manage Menu Items
+                    case "2":
+                        // Call the ManageMenuItems method to manage menu items
+                        ManageMenuItems(conn);
+                        break;
+                    // Option 3: View Reports
+                    case "3":
+                        // Call the ShowReportsMenu method to view reports
+                        ShowReportsMenu(conn);
+                        break;
+                    case "4":
+                        // Exit the admin menu
+                        return;
+                    default:
+                        // Display invalid option message
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+        // ??????????? User and Menu Item Management ???????????
+        // Display the reports menu options
+        static void ShowReportsMenu(SqlConnection conn)
+        {
+            // Loop to display the reports menu until the user chooses to exit
+            while (true)
+            {
+                // Display the reports menu options
+                Console.WriteLine("\n--- Reports ---");
+                // Display the available report options
+                Console.WriteLine("1. Total Sales Per Day");
+                Console.WriteLine("2. Reservation History");
+                Console.WriteLine("3. Orders by Staff");
+                Console.WriteLine("4. Back");
+                // Prompt the user to select an option
+                Console.Write("Select an option: ");
+                var choice = Console.ReadLine();
+
+                // Check the user's choice and call the corresponding method
+                switch (choice)
+                {
+                    // Option 1: Total Sales Per Day
+                    case "1":
+                        // Call the ShowTotalSalesPerDay method to display total sales per day
+                        ShowTotalSalesPerDay(conn);
+                        break;
+                    // Option 2: Reservation History
+                    case "2":
+                        // Call the ShowReservationHistory method to display reservation history
+                        ShowReservationHistory(conn);
+                        break;
+                    // Option 3: Orders by Staff
+                    case "3":
+                        // Call the ShowOrdersByStaff method to display orders by staff
+                        ShowOrdersByStaff(conn);
+                        break;
+                    // Option 4: Back to Admin Menu
+                    case "4":
+                        return;
+                    default:
+                        // Display invalid option message
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+        // Display the reservation history
+        static void ShowTotalSalesPerDay(SqlConnection conn)
+        {
+            // SQL query to fetch total sales per day
+            string sql = @"
+        SELECT 
+            CAST(BillDate AS DATE) AS SaleDate,
+            SUM(Total) AS TotalSales
+        FROM Bills
+        GROUP BY CAST(BillDate AS DATE)
+        ORDER BY SaleDate DESC";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            // Execute the command and read the results
+            using (var reader = cmd.ExecuteReader())
+            {
+                // Display the total sales per day in a formatted table
+                Console.WriteLine("\nDate       | Total Sales");
+                Console.WriteLine("-------------------------");
+                // Loop through the results and print each day's total sales
+                while (reader.Read())
+                {
+                    // Format the output for each day's total sales
+                    Console.WriteLine($"Date: {reader["SaleDate"]}, Total Sales: {reader["TotalSales"]}");
+                }
+            }
+        }
+        // Display the orders by staff
+        static void ShowReservationHistory(SqlConnection conn)
+        {
+            // SQL query to fetch reservation history
+            string sql = @"
+        SELECT 
+            r.ReservationID, r.TableID, r.ReservationTime, c.FirstName + ' ' + c.LastName AS ReservedBy
+        FROM Reservations r
+        INNER JOIN Customer c ON r.CustomerID = c.CustomerID
+        ORDER BY r.ReservationTime DESC";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            // Execute the command and read the results
+            using (var reader = cmd.ExecuteReader())
+            {
+                // Display the reservation history in a formatted table
+                Console.WriteLine("\nReservationID | Table | Date & Time         | Reserved By");
+                Console.WriteLine("------------------------------------------------------------");
+                // Loop through the results and print each reservation's details
+                while (reader.Read())
+                {
+                    // Format the output for each reservation
+                    Console.WriteLine($"{reader["ReservationID"],14} | {reader["TableID"],5} | {reader["ReservationTime"],20} | {reader["ReservedBy"]}");
+                }
+            }
+        }
+        // Display the orders by staff
+        static void ShowOrdersByStaff(SqlConnection conn)
+        {
+            // SQL query to fetch orders by staff
+            string sql = @"
+        SELECT 
+            u.FirstName + ' ' + u.LastName AS StaffName,
+            COUNT(o.OrderID) AS TotalOrders,
+            SUM(b.Total) AS TotalSales
+        FROM Orders o
+        INNER JOIN Users u ON o.UserID = u.UserID
+        Inner Join Bills b ON o.OrderID = b.OrderID
+        GROUP BY u.FirstName, u.LastName
+        ORDER BY TotalSales DESC";
+
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            // Execute the command and read the results
+            using (var reader = cmd.ExecuteReader())
+            {
+                // Display the orders by staff in a formatted table
+                Console.WriteLine("\nStaff Name         | Orders | Total Sales");
+                Console.WriteLine("---------------------------------------------");
+                // Loop through the results and print each staff member's orders and sales
+                while (reader.Read())
+                {
+                    // Format the output for each staff member's orders and sales
+                    Console.WriteLine($"{reader["StaffName"],-20} | {reader["TotalOrders"],6} | {reader["TotalSales"],12:C}");
+                }
+            }
+        }
+
+
+        static void ManageUsers(SqlConnection conn)
+        {
+            // Loop to display the user management menu until the user chooses to exit
+            while (true)
+            {
+                // Display the user management menu options
+                Console.WriteLine("\n--- User Management ---");
+                Console.WriteLine("1. List All Users");
+                Console.WriteLine("2. Add User");
+                Console.WriteLine("3. Edit User");
+                Console.WriteLine("4. Delete User");
+                Console.WriteLine("5. Back");
+                // Prompt the user to select an option
+                Console.Write("Select an option: ");
+                // Read the user's choice from the console
+                var choice = Console.ReadLine();
+                // Check the user's choice and call the corresponding method
+                switch (choice)
+                {
+                    // Option 1: List All Users
+                    case "1":
+                        // Call the ListUsers method to display all users
+                        ListUsers(conn);
+                        break;
+                    // Option 2: Add User
+                    case "2":
+                        // Call the AddUser method to add a new user
+                        AddUser(conn);
+                        break;
+                    // Option 3: Edit User
+                    case "3":
+                        // Call the EditUser method to edit an existing user
+                        EditUser(conn);
+                        break;
+                    // Option 4: Delete User
+                    case "4":
+                        // Call the DeleteUser method to delete a user
+                        DeleteUser(conn);
+                        break;
+                    // Option 5: Back to Admin Menu
+                    case "5":
+                        return;
+                    // Invalid option
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+        // ??????????? Menu Item Management ???????????
+        static void ManageMenuItems(SqlConnection conn)
+        {
+            // Loop to display the menu item management menu until the user chooses to exit
+            while (true)
+            {
+                // Display the menu item management menu options
+                Console.WriteLine("\n--- Menu Item Management ---");
+                Console.WriteLine("1. List All Menu Items");
+                Console.WriteLine("2. Add Menu Item");
+                Console.WriteLine("3. Edit Menu Item");
+                Console.WriteLine("4. Delete Menu Item");
+                Console.WriteLine("5. Back");
+                // Prompt the user to select an option
+                Console.Write("Select an option: ");
+                // Read the user's choice from the console
+                var choice = Console.ReadLine();
+
+                // Check the user's choice and call the corresponding method
+                switch (choice)
+                {
+                    // Option 1: List All Menu Items
+                    case "1":
+                        // Call the ListMenuItems method to display all menu items
+                        ListMenuItems(conn);
+                        break;
+                    // Option 2: Add Menu Item
+                    case "2":
+                        // Call the AddMenuItemC method to add a new menu item
+                        AddMenuItemC(conn);
+                        break;
+                    // Option 3: Edit Menu Item
+                    case "3":
+                        // Call the EditMenuItem method to edit an existing menu item
+                        EditMenuItem(conn);
+                        break;
+                    // Option 4: Delete Menu Item
+                    case "4":
+                        // Call the DeleteMenuItem method to delete a menu item
+                        DeleteMenuItem(conn);
+                        break;
+                    // Option 5: Back to Admin Menu
+                    case "5":
+                        return;
+                    // Invalid option
+                    default:
+                        Console.WriteLine("Invalid option.");
+                        break;
+                }
+            }
+        }
+
+        // ??????????? User Methods ???????????
+
+        // List all users in the database
+        static void ListUsers(SqlConnection conn)
+        {
+            // SQL query to select user details
+            string sql = "SELECT UserID, FirstName, LastName, Email, PhoneNumber, RoleID FROM Users";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            // Execute the command and read the results
+            using (var reader = cmd.ExecuteReader())
+            // Display the user details in a formatted table
+            {
+                Console.WriteLine("ID | Name               | Email               | Phone       | RoleID");
+                Console.WriteLine("------------------------------------------------------------------");
+                // Loop through the results and print each user's details
+                while (reader.Read())
+                {
+                    Console.WriteLine(
+                        $"{reader["UserID"],-2} | {reader["FirstName"]} {reader["LastName"],-15} | " +
+                        $"{reader["Email"],-20} | {reader["PhoneNumber"],-11} | {reader["RoleID"]}"
+                    );
+                }
+            }
+        }
+        // Add a new user to the database
+        static void AddUser(SqlConnection conn)
+        {
+            // Prompt the user for details of the new user
+            Console.Write("First Name: ");
+            var first = Console.ReadLine();
+            Console.Write("Last Name:  ");
+            var last = Console.ReadLine();
+            Console.Write("Email:      ");
+            var email = Console.ReadLine();
+            Console.Write("Phone:      ");
+            var phone = Console.ReadLine();
+            // Prompt for RoleID (1=Admin, 2=Manager, 3=Staff)
+            Console.Write("RoleID (1=Admin,2=Manager,3=Staff): ");
+            var role = int.Parse(Console.ReadLine());
+
+            // SQL query to insert a new user into the Users table
+            string sql = @"
+        INSERT INTO Users 
+          (FirstName, LastName, Email, PhoneNumber, RoleID)
+        VALUES
+          (@first, @last, @email, @phone, @role)";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@first", first);
+                cmd.Parameters.AddWithValue("@last", last);
+                cmd.Parameters.AddWithValue("@email", email);
+                cmd.Parameters.AddWithValue("@phone", phone);
+                cmd.Parameters.AddWithValue("@role", role);
+                cmd.ExecuteNonQuery();
+            }
+            // Display a message indicating that the user has been added
+            Console.WriteLine("User added.");
+        }
+        // Edit an existing user in the database
+        static void EditUser(SqlConnection conn)
+        {
+            // Prompt the user for the ID of the user to edit
+            Console.Write("UserID to edit: ");
+            int id = int.Parse(Console.ReadLine());
+
+            // Prompt for new user details
+            Console.Write("New First Name: ");
+            var first = Console.ReadLine();
+            Console.Write("New Last Name:  ");
+            var last = Console.ReadLine();
+            Console.Write("New Email:      ");
+            var email = Console.ReadLine();
+            Console.Write("New Phone:      ");
+            var phone = Console.ReadLine();
+            Console.Write("New RoleID:     ");
+            var role = int.Parse(Console.ReadLine());
+
+            // SQL query to update the user details in the Users table
+            string sql = @"
+        UPDATE Users
+        SET FirstName   = @first,
+            LastName    = @last,
+            Email       = @email,
+            PhoneNumber = @phone,
+            RoleID      = @role
+        WHERE UserID = @id";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@first", first);
+                cmd.Parameters.AddWithValue("@last", last);
+                cmd.Parameters.AddWithValue("@email", email);
+                cmd.Parameters.AddWithValue("@phone", phone);
+                cmd.Parameters.AddWithValue("@role", role);
+                cmd.ExecuteNonQuery();
+            }
+            Console.WriteLine("User updated.");
+        }
+        // Delete a user from the database
+        static void DeleteUser(SqlConnection conn)
+        {
+            // Prompt the user for the ID of the user to delete
+            Console.Write("UserID to delete: ");
+            int id = int.Parse(Console.ReadLine());
+
+            // SQL query to delete the user from the Users table
+            string sql = "DELETE FROM Users WHERE UserID = @id";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                // Add the user ID parameter to the command
+                cmd.Parameters.AddWithValue("@id", id);
+                // Execute the command to delete the user
+                cmd.ExecuteNonQuery();
+            }
+            // Display a message indicating that the user has been deleted
+            Console.WriteLine("User deleted.");
+        }
+
+        // ??????????? Menu Item Methods ???????????
+
+        // List all menu items in the database
+        static void ListMenuItems(SqlConnection conn)
+        {
+            // SQL query to select menu item details
+            string sql = "SELECT ItemID, ItemName, Category, Price FROM MenuItems";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            // Execute the command and read the results
+            using (var reader = cmd.ExecuteReader())
+            // Display the menu item details in a formatted table
+            {
+                Console.WriteLine("ID | Name                  | Category     | Price");
+                Console.WriteLine("-------------------------------------------------");
+                // Loop through the results and print each menu item's details
+                while (reader.Read())
+                {
+                    // Format the output for each menu item
+                    Console.WriteLine(
+                        $"{reader["ItemID"],-2} | {reader["ItemName"],-20} | " +
+                        $"{reader["Category"],-12} | {reader["Price"],6:C}"
+                    );
+                }
+            }
+        }
+        // Add a new menu item to the database
+        static void AddMenuItemC(SqlConnection conn)
+        {
+            // Prompt the user for details of the new menu item
+            Console.Write("Item Name:    ");
+            var name = Console.ReadLine();
+            Console.Write("Category:     ");
+            var cat = Console.ReadLine();
+            Console.Write("Price:        ");
+            var price = decimal.Parse(Console.ReadLine());
+            Console.Write("Description:  ");
+            var desc = Console.ReadLine();
+            // SQL query to insert a new menu item into the MenuItems table
+
+            string sql = @"
+        INSERT INTO MenuItems 
+          (ItemName, Category, Price, Description)
+        VALUES
+          (@name, @cat, @price, @desc)";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                // Add the menu item parameters to the command
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@cat", cat);
+                cmd.Parameters.AddWithValue("@price", price);
+                cmd.Parameters.AddWithValue("@desc", desc);
+                // Execute the command to insert the new menu item
+                cmd.ExecuteNonQuery();
+            }
+            // Display a message indicating that the menu item has been added
+            Console.WriteLine("Menu item added.");
+        }
+        // Edit an existing menu item in the database
+        static void EditMenuItem(SqlConnection conn)
+        {
+            // Prompt the user for the ID of the menu item to edit
+            Console.Write("ItemID to edit: ");
+            int id = int.Parse(Console.ReadLine());
+
+            // Prompt for new menu item details
+            Console.Write("New Name:       ");
+            var name = Console.ReadLine();
+            Console.Write("New Category:   ");
+            var cat = Console.ReadLine();
+            Console.Write("New Price:      ");
+            var price = decimal.Parse(Console.ReadLine());
+            Console.Write("New Description:");
+            var desc = Console.ReadLine();
+
+            // SQL query to update the menu item details in the MenuItems table
+            string sql = @"
+        UPDATE MenuItems
+        SET ItemName    = @name,
+            Category    = @cat,
+            Price       = @price,
+            Description = @desc
+        WHERE ItemID = @id";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                // Add the menu item parameters to the command
+                cmd.Parameters.AddWithValue("@id", id);
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@cat", cat);
+                cmd.Parameters.AddWithValue("@price", price);
+                cmd.Parameters.AddWithValue("@desc", desc);
+                // Execute the command to update the menu item
+                cmd.ExecuteNonQuery();
+            }
+            // Display a message indicating that the menu item has been updated
+            Console.WriteLine("Menu item updated.");
+        }
+        // Delete a menu item from the database
+        static void DeleteMenuItem(SqlConnection conn)
+        {
+            // Prompt the user for the ID of the menu item to delete
+            Console.Write("ItemID to delete: ");
+            // Read the menu item ID from the console
+            int id = int.Parse(Console.ReadLine());
+
+            // SQL query to delete the menu item from the MenuItems table
+            string sql = "DELETE FROM MenuItems WHERE ItemID = @id";
+            // Create a SqlCommand object with the SQL query and connection
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                // Add the menu item ID parameter to the command
+                cmd.Parameters.AddWithValue("@id", id);
+                // Execute the command to delete the menu item
+                cmd.ExecuteNonQuery();
+            }
+            // Display a message indicating that the menu item has been deleted
+            Console.WriteLine("Menu item deleted.");
+        }
+        // ??????????? Manager Methods ???????????
+        // Display the manager menu options
+        static void ShowManagerMenu(SqlConnection conn)
+        {
+            // Display the manager menu options
+            Console.WriteLine("\nManager Menu:");
+            Console.WriteLine("1. Assign Staff");
+            Console.WriteLine("2. Process Order");
+            Console.WriteLine("3. Manage Tables");
+            Console.WriteLine("4. Exit");
+
+            // Prompt the user to select an option
+            Console.Write("Select an option: ");
+            // Read the user's choice from the console
+            string input = Console.ReadLine();
+
+            // Check the user's choice and call the corresponding method
+            switch (input)
+            {
+                // Option 1: Assign Staff
+                case "1":
+                    // calling the AssignStaff method
+                    AssignStaff(new SqlConnection("Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;"));
+                    break;
+                case "2":
+                    // calling the ProcessOrder method
+                    ProcessOrder(new SqlConnection("Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;"));
+                    break;
+                case "3":
+                    // calling the ManageTables method
+                    ManageTables(new SqlConnection("Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;"));
+                    break;
+                case "4":
+                    // Exit the manager menu
+                    Console.WriteLine("Exiting...");
+                    break;
+                default:
+                    // Display invalid option message
+                    Console.WriteLine("Invalid option. Please try again.");
+                    // Call the ShowManagerMenu method to display the menu again
+                    ShowManagerMenu(conn);
+                    break;
+            }
+        }
+        // Assign staff to a table
+        static void AssignStaff(SqlConnection conn)
+        {
+            // Prompt the user for staff ID and table ID
+            Console.Write("Enter the Staff ID to assign: ");
+            // Read the staff ID from the console
+            int staffId = int.Parse(Console.ReadLine());
+
+            // Prompt for table ID
+            Console.Write("Enter the Table ID for assignment: ");
+            // Read the table ID from the console
+            int tableId = int.Parse(Console.ReadLine());
+
+            // Assign staff to a table (this is just an example, you can expand this logic)
+            string query = "UPDATE Staff SET TableID = @TableID WHERE StaffID = @StaffID";
+
+            // Execute the query to assign staff to the table
+            try
+            {
+                // Open the connection to the database
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add parameters to the command
+                    cmd.Parameters.AddWithValue("@TableID", tableId);
+                    cmd.Parameters.AddWithValue("@StaffID", staffId);
+                    // Execute the command and get the number of rows affected
+                    int rowsAffected = cmd.ExecuteNonQuery();
+
+                    // Check if the assignment was successful
+                    if (rowsAffected > 0)
+                    {
+                        // Display a success message
+                        Console.WriteLine("Staff assigned successfully.");
+                    }
+                    // If no rows were affected, display a failure message
+                    else
+                    {
+                        // Display a failure message
+                        Console.WriteLine("Failed to assign staff.");
+                    }
+                }
+            }
+            // Catch any exceptions that occur during the assignment process
+            catch (Exception ex)
+            {
+                // Display an error message
+                Console.WriteLine("Error assigning staff: " + ex.Message);
+            }
+        }
+        // Process an order (approve or cancel)
+        static void ProcessOrder(SqlConnection conn)
+        {
+            // Prompt the user for the order ID to process
+            Console.Write("Enter Order ID to process: ");
+            // Read the order ID from the console
+            int orderId = int.Parse(Console.ReadLine());
+
+            // Fetch order details
+            string query = "SELECT OrderID, OrderDate, Status FROM Orders WHERE OrderID = @OrderID";
+
+            // Execute the query to fetch order details
+            try
+            {
+                // Open the connection to the database
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add the order ID parameter to the command
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+
+                    // Execute the command and read the results
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Check if the order exists
+                        if (reader.Read())
+                        {
+                            // Display order details
+                            Console.WriteLine($"Order ID: {reader["OrderID"]}, Order Date: {reader["OrderDate"]}, Status: {reader["Status"]}");
+                        }
+                        // If the order does not exist, display a message
+                        else
+                        {
+                            // Display order not found message
+                            Console.WriteLine("Order not found.");
+                            return;
+                        }
+                    }
+                }
+
+                Console.WriteLine("Do you want to approve or cancel the order?");
+                Console.WriteLine("1. Approve");
+                Console.WriteLine("2. Cancel");
+                int action = int.Parse(Console.ReadLine());
+
+                string status = action == 1 ? "Approved" : "Canceled";
+
+                // Update the order status
+                string updateQuery = "UPDATE Orders SET Status = @Status WHERE OrderID = @OrderID";
+                using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Status", status);
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    int rowsAffected = cmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine($"Order {status} successfully.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to update the order.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error processing order: " + ex.Message);
+            }
+        }
+        // Manage tables (view or update status)
+        static void ManageTables(SqlConnection conn)
+        {
+            // Display the table management menu options
+            Console.WriteLine("Manage Tables");
+            Console.WriteLine("1. View Table Status");
+            Console.WriteLine("2. Update Table Status");
+            Console.WriteLine("3. Exit");
+
+            // Prompt the user to select an option
+            Console.Write("Choose an option: ");
+            // Read the user's choice from the console
+            int choice = int.Parse(Console.ReadLine());
+
+            // Check the user's choice and call the corresponding method
+            switch (choice)
+            {
+                // Option 1: View Table Status
+                case 1:
+                    // calling the ViewTableStatus method
+                    ViewTableStatus(conn);
+                    break;
+                // Option 2: Update Table Status
+                case 2:
+                    // calling the UpdateTableStatus method
+                    UpdateTableStatus(conn);
+                    break;
+                // Option 3: Exit
+                case 3:
+                    // Exit the table management menu
+                    Console.WriteLine("Exiting Table Management.");
+                    break;
+                // Invalid option
+                default:
+                    // Display invalid option message
+                    Console.WriteLine("Invalid option.");
+                    break;
+            }
+        }
+        // View the status of a specific table
+        static void ViewTableStatus(SqlConnection conn)
+        {
+            // Prompt the user for the table ID to view status
+            Console.Write("Enter Table ID to view status: ");
+            // Read the table ID from the console
+            int tableId = int.Parse(Console.ReadLine());
+
+            // SQL query to fetch the status of the specified table
+            string query = "SELECT Status FROM Tables WHERE TableID = @TableID";
+            // Execute the query to fetch the table status
+            try
+            {
+                // Open the connection to the database
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add the table ID parameter to the command
+                    cmd.Parameters.AddWithValue("@TableID", tableId);
+                    // Execute the command and read the results
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Check if the table exists
+                        if (reader.Read())
+                        {
+                            // Display the table status
+                            Console.WriteLine($"Table Status: {reader["Status"]}");
+                        }
+                        // If the table does not exist, display a message
+                        else
+                        {
+                            // Display table not found message
+                            Console.WriteLine("Table not found.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching table status: " + ex.Message);
+            }
+        }
+
+        // ??????????? Staff Methods ???????????
+
+        // Display the staff menu options
+        static void ShowStaffMenu(SqlConnection conn)
+        {
+            // Display the staff menu options
+            Console.WriteLine("\nStaff Menu:");
+            Console.WriteLine("1. Take Order");
+            Console.WriteLine("2. Generate Bills");
+            Console.WriteLine("3. Update Table Status");
+            Console.WriteLine("4. Exit");
+
+            // Prompt the user to select an option
+            Console.Write("Select an option: ");
+            // Read the user's choice from the console
+            string input = Console.ReadLine();
+
+            // Check the user's choice and call the corresponding method
+            switch (input)
+            {
+                // Option 1: Take Order
+                case "1":
+                    // calling the TakeOrder method
+                    TakeOrder(1, new SqlConnection("Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;"));
+                    break;
+                // Option 2: Generate Bills
+                case "2":
+                    // calling the GenerateBill method
+                    GenerateBill(new SqlConnection("Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;"));
+                    break;
+                // Option 3: Update Table Status
+                case "3":
+                    // calling the UpdateTableStatus method
+                    UpdateTableStatus(new SqlConnection("Server=DESKTOP-BFNGCL6\\SQLEXPRESS;Database=Restaurant_Management_System;Integrated Security=True;"));
+                    break;
+                // Option 4: Exit
+                case "4":
+                    Console.WriteLine("Exiting...");
+                    break;
+                // Invalid option
+                default:
+                    // Display invalid option message
+                    Console.WriteLine("Invalid option. Please try again.");
+                    // Call the ShowStaffMenu method to display the menu again
+                    ShowStaffMenu(conn);
+                    break;
+            }
+        }
+        // Take an order from a customer
+        static void TakeOrder(int staffId, SqlConnection conn)
+        {
+            // Prompt the user for customer ID, table ID, menu item ID, and quantity
+            try
+            {
+                // Step 1: Display menu items
+                Console.WriteLine("\nAvailable Menu Items:");
+                // SQL query to fetch menu items
+                string menuQuery = "SELECT MenuItemID, ItemName, Price FROM MenuItems";
+                // Execute the query to fetch menu items
+                using (SqlCommand cmd = new SqlCommand(menuQuery, conn))
+                {
+                    // Execute the command and read the results
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Display the menu items in a formatted table
+                        while (reader.Read())
+                        {
+                            // Format the output for each menu item
+                            Console.WriteLine($"ID: {reader["MenuItemID"]}, Name: {reader["ItemName"]}, Price: {reader["Price"]}");
+                        }
+                    }
+                }
+
+                // Step 2: Get inputs
+                // Prompt for customer ID, table ID, menu item ID, and quantity
+                Console.Write("Enter Customer ID: ");
+                int customerId = int.Parse(Console.ReadLine());
+
+                Console.Write("Enter Table ID: ");
+                int tableId = int.Parse(Console.ReadLine());
+
+                Console.Write("Enter Menu Item ID: ");
+                int menuItemId = int.Parse(Console.ReadLine());
+
+                Console.Write("Enter Quantity: ");
+                int quantity = int.Parse(Console.ReadLine());
+
+                // Step 3: Insert into Orders table
+                string insertOrder = "INSERT INTO Orders (CustomerID, TableID, StaffID, OrderDate) " +
+                                     "VALUES (@CustomerID, @TableID, @StaffID, GETDATE()); SELECT SCOPE_IDENTITY();";
+
+                // Execute the command to insert the order and get the new OrderID
+                int orderId;
+                // Create a SqlCommand object with the SQL query and connection
+                using (SqlCommand cmd = new SqlCommand(insertOrder, conn))
+                {
+                    // Add parameters to the command
+                    cmd.Parameters.AddWithValue("@CustomerID", customerId);
+                    cmd.Parameters.AddWithValue("@TableID", tableId);
+                    cmd.Parameters.AddWithValue("@StaffID", staffId);
+
+                    // Execute the command and get the new OrderID
+                    orderId = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+
+                // Step 4: Insert into OrderDetails table
+                string insertDetail = "INSERT INTO OrderDetails (OrderID, MenuItemID, Quantity) " +
+                                      "VALUES (@OrderID, @MenuItemID, @Quantity)";
+                // Execute the command to insert the order details
+                using (SqlCommand cmd = new SqlCommand(insertDetail, conn))
+                {
+                    // Add parameters to the command
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    cmd.Parameters.AddWithValue("@MenuItemID", menuItemId);
+                    cmd.Parameters.AddWithValue("@Quantity", quantity);
+                    // Execute the command to insert the order details
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Optional: update table status
+                string updateTable = "UPDATE Tables SET Status = 'Occupied' WHERE TableID = @TableID";
+                // Execute the command to update the table status
+                using (SqlCommand cmd = new SqlCommand(updateTable, conn))
+                {
+                    // Add the table ID parameter to the command
+                    cmd.Parameters.AddWithValue("@TableID", tableId);
+                    // Execute the command to update the table status
+                    cmd.ExecuteNonQuery();
+                }
+                // Display a success message
+                Console.WriteLine("Order placed successfully!");
+            }
+            // Catch any exceptions that occur during the order placement process
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error placing order: " + ex.Message);
+            }
+        }
+        // Generate a bill for a specific order
+        static void GenerateBill(SqlConnection conn)
+        {
+            // Prompt the user for the order ID to generate a bill
+            try
+            {
+                // user input for order ID
+                Console.Write("Enter Order ID: ");
+                int orderId = int.Parse(Console.ReadLine());
+
+                // Step 1: Fetch order items and calculate total
+                string query = @"
+            SELECT mi.ItemName, od.Quantity, mi.Price, 
+                   (od.Quantity * mi.Price) AS Subtotal
+            FROM OrderDetails od
+            JOIN MenuItems mi ON od.MenuItemID = mi.MenuItemID
+            WHERE od.OrderID = @OrderID";
+
+                // Execute the query to fetch order items
+                decimal totalAmount = 0;
+
+                // Create a SqlCommand object with the SQL query and connection
+                Console.WriteLine("\n--- Bill Details ---");
+                // Execute the command and read the results
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add the order ID parameter to the command
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    // Execute the command and read the results
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Display the order items in a formatted table
+                        while (reader.Read())
+                        {
+                            // Format the output for each order item
+                            string item = reader["ItemName"].ToString();
+                            int qty = Convert.ToInt32(reader["Quantity"]);
+                            decimal price = Convert.ToDecimal(reader["Price"]);
+                            decimal subtotal = Convert.ToDecimal(reader["Subtotal"]);
+
+                            // Display the item details
+                            Console.WriteLine($"{item} x{qty} @ {price:C} = {subtotal:C}");
+                            totalAmount += subtotal;
+                        }
+                    }
+                }
+                // Display the total amount
+                Console.WriteLine($"Total Amount: {totalAmount:C}");
+
+                // Step 2: Insert into Bills table
+                string insertBill = @"
+            INSERT INTO Bills (OrderID, TotalAmount, BillDate)
+            VALUES (@OrderID, @TotalAmount, GETDATE())";
+
+                // Execute the command to insert the bill
+                using (SqlCommand cmd = new SqlCommand(insertBill, conn))
+                {
+                    // Add parameters to the command
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    cmd.Parameters.AddWithValue("@TotalAmount", totalAmount);
+                    // Execute the command to insert the bill
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Step 3: Optional - Mark table as available
+                string updateTable = @"
+            UPDATE t SET t.Status = 'Available'
+            FROM Tables t
+            JOIN Orders o ON t.TableID = o.TableID
+            WHERE o.OrderID = @OrderID";
+
+                // Execute the command to update the table status
+                using (SqlCommand cmd = new SqlCommand(updateTable, conn))
+                {
+                    // Add the order ID parameter to the command
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    // Execute the command to update the table status
+                    cmd.ExecuteNonQuery();
+                }
+                // Display a success message
+                Console.WriteLine("Bill generated and table status updated.");
+            }
+            // Catch any exceptions that occur during the bill generation process
+            catch (Exception ex)
+            {
+                // Display an error message
+                Console.WriteLine("Error generating bill: " + ex.Message);
+            }
+        }
+        // Update the status of a specific table
+        static void UpdateTableStatus(SqlConnection conn)
+        {
+            // Prompt the user for the table ID to update status
+            try
+            {
+                // user input for table ID
+                Console.Write("Enter Table ID to update status: ");
+                int tableId = int.Parse(Console.ReadLine());
+
+                // Step 1: Fetch current table status
+                string query = "SELECT Status FROM Tables WHERE TableID = @TableID";
+                string currentStatus = null;
+
+                // Execute the query to fetch the current table status
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    // Add the table ID parameter to the command
+                    cmd.Parameters.AddWithValue("@TableID", tableId);
+                    // Execute the command and read the results
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Check if the table exists
+                        if (reader.Read())
+                        {
+                            // Get the current status of the table
+                            currentStatus = reader["Status"].ToString();
+                        }
+                        // If the table does not exist, display a message
+                        else
+                        {
+                            // Display table ID not found message
+                            Console.WriteLine("Table ID not found.");
+                            return;
+                        }
+                    }
+                }
+
+                // Display the current status of the table
+                Console.WriteLine($"Current Table Status: {currentStatus}");
+                // Prompt the user for the new status
+                Console.WriteLine("Enter new status for the table:");
+                Console.WriteLine("1. Available");
+                Console.WriteLine("2. Occupied");
+                Console.WriteLine("3. Reserved");
+                Console.Write("Select option (1/2/3): ");
+                // Read the user's choice from the console
+                int statusOption = int.Parse(Console.ReadLine());
+
+                // Step 2: Set new status based on user input
+                string newStatus = null;
+
+                // Determine the new status based on user input
+                if (statusOption == 1)
+                {
+                    // Set new status to "Available"
+                    newStatus = "Available";
+                }
+                else if (statusOption == 2)
+                {
+                    // Set new status to "Occupied"
+                    newStatus = "Occupied";
+                }
+                else if (statusOption == 3)
+                {
+                    // Set new status to "Reserved"
+                    newStatus = "Reserved";
+                }
+                // if new status is null, display an error message
+                if (newStatus == null)
+                {
+                    // Display invalid option message
+                    Console.WriteLine("Invalid option. Status not updated.");
+                    return;
+                }
+
+                // Step 3: Update the table status in the database
+                string updateStatusQuery = "UPDATE Tables SET Status = @NewStatus WHERE TableID = @TableID";
+                // Execute the command to update the table status
+                using (SqlCommand cmd = new SqlCommand(updateStatusQuery, conn))
+                {
+                    // Add parameters to the command
+                    cmd.Parameters.AddWithValue("@NewStatus", newStatus);
+                    cmd.Parameters.AddWithValue("@TableID", tableId);
+                    // Execute the command to update the table status
+                    cmd.ExecuteNonQuery();
+                }
+                // Display a success message
+                Console.WriteLine($"Table status updated to {newStatus}.");
+            }
+            // Catch any exceptions that occur during the table status update process
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error updating table status: " + ex.Message);
+            }
+        }
+
+    }
+}
